@@ -9,7 +9,7 @@ import os
 import json
 import interactions
 
-from interactions import Button, ButtonStyle, SelectMenu, Option, OptionType, SelectOption
+from interactions import Button, ButtonStyle, SelectMenu, Option, OptionType, SelectOption, Permissions
 #from discord.ext import commands
 
 config = json.load(open('config/config.json', 'r'))
@@ -32,7 +32,7 @@ async def on_ready():
 
 
 ##
-## Load ./modules/*
+## Commands for ./modules/*
 ##
 
 def load_extensions():
@@ -53,6 +53,7 @@ def load_extensions():
 @client.command(
     name="modulectl",
     description="Module control :P",
+    default_member_permissions=Permissions.ADMINISTRATOR,
     options=[
         Option(
             name="module",

@@ -3,3 +3,4 @@ config/config.json
 **/execs/*
 modules/*
 !modules/base/
+.vscode/*

@@ -1,16 +1,30 @@
+#
+#   Purpose: Command a minecraft server
+#   Created: 22/01/2022
+#   Author: AlpacaSundae#0648
+#
+#   Commanded through slash commands in discord
+#   Runs the server using a script located at "MC_DIR/MC_LAUNCH" --> default: "execs/mc_server/run.sh"
+#   Requires a commanding user to have a role as specified by its ID stored in MC_ROLE 
+#
+# todo: status role that anyone can invoke telling if server is up, how many players, ip etc
+
 import interactions
 import subprocess
 import time
 import os
 
-from interactions import Button, ButtonStyle, Modal, TextInput, TextStyleType
-
-#todo: only those with mc_runner role should be allowed to command these commands
-#todo: status role that anyone can invoke telling if server is up, how many players, ip etc
+from interactions import Button, ButtonStyle, Modal, TextInput, TextStyleType, Permissions
 
 MC_DIR = os.path.join(os.getcwd(), "execs/mc_server/")
 MC_LAUNCH = os.path.join(MC_DIR, "run.sh")
 MC_PORT = "25565"
+
+# Variables
+MC_ROLE = 1067129702235521024 # copy ID of the role given to allow mc_runner control here
+
+# Some predefined messages
+INVALID_PERMISSIONS = "You do not meet role requirements for managing \"mc_runner\""
 
 class MCRunnerError(Exception):
     pass
@@ -51,6 +65,9 @@ class MCRunner():
 
     def getDetails(self):
         raise MCRunnerError("not implemented yet sorry >.<")
+
+    def checkPerm(self, ctx):
+        return any(role == MC_ROLE for role in ctx.author.roles)
 
     def start(self):
         if (self.proc):
@@ -101,6 +118,7 @@ class MCRunnerBot(interactions.Extension):
     @interactions.extension_command(
         name="mc_ctl",
         description="Minecraft server controller",
+        default_member_permissions=Permissions.ADMINISTRATOR,
     )
     async def mc_ctl(self, ctx):
         #start button if stopped, stop if started
@@ -134,6 +152,10 @@ class MCRunnerBot(interactions.Extension):
     ## run the stopped mc server
     @interactions.extension_component("mc_b_start")
     async def start(self, ctx):
+        if not self.MCRunner.checkPerm(ctx):
+            await ctx.send(INVALID_PERMISSIONS)
+            return
+
         try:
             self.MCRunner.start()
             await ctx.send(f"Server ahs been started\njoin@{self.MCRunner.getIP()}")
@@ -144,6 +166,10 @@ class MCRunnerBot(interactions.Extension):
     ## stop the running mc server
     @interactions.extension_component("mc_b_stop")
     async def stop(self, ctx):
+        if not self.MCRunner.checkPerm(ctx):
+            await ctx.send(INVALID_PERMISSIONS)
+            return
+
         try:
             self.MCRunner.stop()
             await ctx.send("Server closed")
@@ -152,7 +178,11 @@ class MCRunnerBot(interactions.Extension):
 
     ## send a command to the server
     @interactions.extension_component("mc_b_cmd")
-    async def cmd(self, ctx):
+    async def cmd(self, ctx:interactions.ComponentContext):
+        if not self.MCRunner.checkPerm(ctx):
+            await ctx.send(INVALID_PERMISSIONS)
+            return
+
         # create modal to allow cmd input
         modal = Modal(
             custom_id="mc_m_cmd",
@@ -170,6 +200,10 @@ class MCRunnerBot(interactions.Extension):
     # now to handle the modal
     @interactions.extension_modal("mc_m_cmd")
     async def cmd_modal(self, ctx, msg: str):
+        if not self.MCRunner.checkPerm(ctx):
+            await ctx.send(INVALID_PERMISSIONS)
+            return
+
         # run command, output results
         try:
             response = self.MCRunner.command(msg)
