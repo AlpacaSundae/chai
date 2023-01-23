@@ -1,0 +1,5 @@
+config/config.json
+**/__pycache__/*
+**/execs/*
+modules/*
+!modules/base/
